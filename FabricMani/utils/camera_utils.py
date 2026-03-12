@@ -200,57 +200,97 @@ def get_rotation_matrix(angle, axis):
     s = np.sin(angle)
     c = np.cos(angle)
 
-
+    # Initialize a 4x4 zero matrix to store the rotation matrix
     m = np.zeros((4, 4))
 
+    # Calculate the (0, 0)  (0, 1)  (0, 2) element of the rotation matrix according to the Rodriguez rotation formula
     m[0][0] = axis[0] * axis[0] + (1.0 - axis[0] * axis[0]) * c
     m[0][1] = axis[0] * axis[1] * (1.0 - c) - axis[2] * s
     m[0][2] = axis[0] * axis[2] * (1.0 - c) + axis[1] * s
+    # In homogeneous coordinates, the (0, 3) element of the rotation matrix is 0
     m[0][3] = 0.0
 
+    # Calculate the (1, 0)  (1, 1)  (1, 2) element of the rotation matrix according to the Rodriguez rotation formula
     m[1][0] = axis[0] * axis[1] * (1.0 - c) + axis[2] * s
     m[1][1] = axis[1] * axis[1] + (1.0 - axis[1] * axis[1]) * c
     m[1][2] = axis[1] * axis[2] * (1.0 - c) - axis[0] * s
+    # In homogeneous coordinates, the (1, 3) element of the rotation matrix is 0
     m[1][3] = 0.0
 
+    # Calculate the (2, 0)  (2, 1)  (2, 2) element of the rotation matrix according to the Rodriguez rotation formula
     m[2][0] = axis[0] * axis[2] * (1.0 - c) - axis[1] * s
     m[2][1] = axis[1] * axis[2] * (1.0 - c) + axis[0] * s
     m[2][2] = axis[2] * axis[2] + (1.0 - axis[2] * axis[2]) * c
+    # In homogeneous coordinates, the (2, 3) element of the rotation matrix is 0
     m[2][3] = 0.0
 
+    # In homogeneous coordinates, the (3, 0) (3, 1) (3, 2) element of the rotation matrix is 0
     m[3][0] = 0.0
     m[3][1] = 0.0
     m[3][2] = 0.0
+    # In homogeneous coordinates, the (3, 3) element of the rotation matrix is 1 to ensure consistent transformation
     m[3][3] = 1.0
 
     return m
 
 
 def get_world_coords(rgb, depth, env, particle_pos=None):
+    """
+    This function is used to convert pixel points in the camera image to coordinates in the world coordinate system through depth information.
+
+    Parameters:
+    - rgb (numpy.ndarray): Color image data, with the shape (height, width, channels).
+    - depth (numpy.ndarray): Depth image data, with the same height and width as the rgb image.
+    - env (object): An environment object containing camera parameters.
+    - particle_pos (optional): Particle position, default is None, not used in this function.
+
+    Returns:
+    - numpy.ndarray: Coordinates in the world coordinate system, with the shape (height, width, 4), where the last dimension contains homogeneous coordinate information.
+
+
+    """
     height, width, _ = rgb.shape
+    # Calculate the camera intrinsic matrix K according to the image height, width and a 45 - degree field of view
     K = intrinsic_from_fov(height, width, 45)  # the fov is 90 degrees
 
     # Apply back-projection: K_inv @ pixels * depth
+    # Extract parameters from the camera intrinsic matrix K:
+    # the horizontal coordinate u0
+    # the vertical coordinate v0 of the principal point
+    # the horizontal focal length fx
+    # the vertical focal length fy
     u0 = K[0, 2]
     v0 = K[1, 2]
     fx = K[0, 0]
     fy = K[1, 1]
 
+    # Generate an array from 0 to image width - 1 in the horizontal direction
     x = np.linspace(0, width - 1, width).astype(float)
+    # Generate an array from 0 to image height - 1 in the vertical direction
     y = np.linspace(0, height - 1, height).astype(float)
+    # Generate grid coordinate matrices u and v
     u, v = np.meshgrid(x, y)
+    # Create a ones array with the shape (height, width, 1)
     one = np.ones((height, width, 1))
+    # Calculate the x - coordinate in the camera coordinate system according to the back - projection formula
     x = (u - u0) * depth / fx
+    # Calculate the y - coordinate in the camera coordinate system according to the back - projection formula
     y = (v - v0) * depth / fy
+    # The depth information is used as the z - coordinate in the camera coordinate system
     z = depth
+    # Stack the x, y, z coordinates and the ones array along the depth direction to form the coordinate matrix in the camera coordinate system
     cam_coords = np.dstack([x, y, z, one])
 
+    # Get the transformation matrix from the world coordinate system to the camera coordinate system
     matrix_world_to_camera = get_matrix_world_to_camera(
         env.camera_params[env.camera_name]['pos'], env.camera_params[env.camera_name]['angle'])
 
     # convert the camera coordinate back to the world coordinate using the rotation and translation matrix
+    # Reshape and transpose the coordinate matrix in the camera coordinate system to the shape of 4 x (height x width)
     cam_coords = cam_coords.reshape((-1, 4)).transpose()  # 4 x (height x width)
+    # Convert the camera coordinates to world coordinates using the inverse of the world - to - camera transformation matrix
     world_coords = np.linalg.inv(matrix_world_to_camera) @ cam_coords  # 4 x (height x width)
+    # Transpose and reshape the world coordinates back to the shape of (height, width, 4)
     world_coords = world_coords.transpose().reshape((height, width, 4))
 
     return world_coords
