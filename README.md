@@ -13,7 +13,7 @@
 # Simulation
 
 ## Setup
-
+Compute device：NVIDIA GeForce RTX 3090
 This project is based on softgym simulation, consider to follow the [SoftGym](https://danieltakeshi.github.io/2021/02/20/softgym/) setup.
 
 You can clone an individual [softgym](https://github.com/Xingyu-Lin/softgym) to build the pyflex(C++ part). We do not revise the pyflex part in this project. But you have to use the softgym python part in this project(especially the [envs](softgym%2Fsoftgym%2Fenvs) folder) to run the simulation.
