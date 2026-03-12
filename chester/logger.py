@@ -20,12 +20,12 @@ ERROR = 40
 
 DISABLED = 50
 
-
+# parent class
 class KVWriter(object):
     def writekvs(self, kvs):
         raise NotImplementedError
 
-
+# parent class
 class SeqWriter(object):
     def writeseq(self, seq):
         raise NotImplementedError
@@ -41,13 +41,17 @@ def put_in_middle(str1, str2):
         start = (n - m) // 2
         return str1[:start] + str2 + str1[start + m:]
 
-
+# subclass of KVWriter, SeqWriter
+# dumps kv pair and seq into human-format
 class HumanOutputFormat(KVWriter, SeqWriter):
     def __init__(self, filename_or_file):
+        # case1: input file name str, open it directly and marked as true
         if isinstance(filename_or_file, str):
             self.file = open(filename_or_file, 'wt')
             self.own_file = True
+        # case2: input objects, reuse it directly and marked as false
         else:
+            # assert: throw an exception while bool is false
             assert hasattr(filename_or_file, 'read'), 'expected file or str, got %s' % filename_or_file
             self.file = filename_or_file
             self.own_file = False
@@ -90,9 +94,11 @@ class HumanOutputFormat(KVWriter, SeqWriter):
         # Flush the output to the file
         self.file.flush()
 
+    # turncate long strings
     def _truncate(self, s):
         return s[:30] + '...' if len(s) > 33 else s
 
+    # write each element of a sequence (e.g.list)
     def writeseq(self, seq):
         for arg in seq:
             self.file.write(arg)
@@ -103,7 +109,7 @@ class HumanOutputFormat(KVWriter, SeqWriter):
         if self.own_file:
             self.file.close()
 
-
+# dumps kv pair into json-format
 class JSONOutputFormat(KVWriter):
     def __init__(self, filename):
         self.file = open(filename, 'wt')
@@ -119,7 +125,7 @@ class JSONOutputFormat(KVWriter):
     def close(self):
         self.file.close()
 
-
+# dumps kv pair into csv-format
 class CSVOutputFormat(KVWriter):
     def __init__(self, filename):
         self.file = open(filename, 'w+t')
@@ -160,6 +166,9 @@ class TensorBoardOutputFormat(KVWriter):
     """
     Dumps key/value pairs into TensorBoard's numeric format.
     """
+    """
+    TensorBoard: visual tool
+    """
 
     def __init__(self, dir):
         os.makedirs(dir, exist_ok=True)
@@ -193,7 +202,7 @@ class TensorBoardOutputFormat(KVWriter):
             self.writer.Close()
             self.writer = None
 
-
+# crate an instance based on the formats above
 def make_output_format(format, ev_dir, log_suffix=''):
     os.makedirs(ev_dir, exist_ok=True)
     if format == 'stdout':
@@ -214,9 +223,10 @@ def make_output_format(format, ev_dir, log_suffix=''):
 # API
 # ================================================================
 
+# logs a single kv pair
 def logkv(key, val):
     """
-    Log a value of some diagnostic
+    Log a value of some diagnostic（judgment）
     Call this once for each diagnostic quantity, each iteration
     If called many times, last value will be used.
     """
@@ -240,10 +250,10 @@ def logkvs(d):
 
 def dumpkvs():
     """
-    Write all of the diagnostics from the current iteration
+    Write all of the diagnostics (kv pairs) from the current iteration
 
     level: int. (see logger.py docs) If the global logger level is higher than
-                the level argument here, don't print to stdout.
+                the level argument here, don't print to standard output.
     """
     Logger.CURRENT.dumpkvs()
 
@@ -258,7 +268,7 @@ def log(*args, level=INFO):
     """
     Logger.CURRENT.log(*args, level=level)
 
-
+# 4 levels of log
 def debug(*args):
     log(*args, level=DEBUG)
 
@@ -293,7 +303,7 @@ def get_dir():
 record_tabular = logkv
 dump_tabular = dumpkvs
 
-
+# context manager based on timing tool
 class ProfileKV:
     """
     Usage:
@@ -301,16 +311,17 @@ class ProfileKV:
         code
     """
 
+    # concatenate wait_n
     def __init__(self, n):
         self.n = "wait_" + n
-
+    # log the start time
     def __enter__(self):
         self.t1 = time.time()
-
+    # compute elapsed time and accumulate
     def __exit__(self, type, value, traceback):
         Logger.CURRENT.name2val[self.n] += time.time() - self.t1
 
-
+# measuring function execution time (based on decorator timing tool)
 def profile(n):
     """
     Usage:
@@ -331,7 +342,7 @@ def profile(n):
 # ================================================================
 # Backend
 # ================================================================
-
+# parent
 class Logger(object):
     DEFAULT = None  # A logger with no output files. (See right below class definition)
     # So that you can still log to the terminal without setting up any output files
@@ -346,9 +357,10 @@ class Logger(object):
 
     # Logging API, forwarded
     # ----------------------------------------
+    # log kv pair and save in name2val
     def logkv(self, key, val):
         self.name2val[key] = val
-
+    # accumulate to compute the mean, dynamically update the name2cnt
     def logkv_mean(self, key, val):
         if val is None:
             self.name2val[key] = None
@@ -368,6 +380,7 @@ class Logger(object):
     def log(self, *args, level=INFO):
         if self.level <= level:
             self._do_log(args)
+    # ----------------------------------------
 
     # Configuration
     # ----------------------------------------
@@ -380,18 +393,21 @@ class Logger(object):
     def close(self):
         for fmt in self.output_formats:
             fmt.close()
+    # ----------------------------------------
 
     # Misc
     # ----------------------------------------
+    # write text logs to a seqwriter-compatible format
     def _do_log(self, args):
         for fmt in self.output_formats:
             if isinstance(fmt, SeqWriter):
                 fmt.writeseq(map(str, args))
 
-
+# call the HumanOutputFormat class line 46
+# in else brunch, and jump to line 346 (object)
 Logger.DEFAULT = Logger.CURRENT = Logger(dir=None, output_formats=[HumanOutputFormat(sys.stdout)])
 
-
+# configure the log sys
 def configure(dir=None, format_strs=None, exp_name=None):
     if dir is None:
         dir = os.getenv('OPENAI_LOGDIR')
@@ -407,6 +423,7 @@ def configure(dir=None, format_strs=None, exp_name=None):
         format_strs = strs.split(',') if strs else LOG_OUTPUT_FORMATS
     output_formats = [make_output_format(f, dir) for f in format_strs]
 
+    # Create a global logger instance
     Logger.CURRENT = Logger(dir=dir, output_formats=output_formats)
     log('Logging to %s' % dir)
 
@@ -418,6 +435,7 @@ def reset():
         log('Reset logger')
 
 
+# Logging configuration context manager class
 class scoped_configure(object):
     def __init__(self, dir=None, format_strs=None):
         self.dir = dir
@@ -516,6 +534,6 @@ def read_tb(path):
             data[step - 1, colidx] = value
     return pandas.DataFrame(data, columns=tags)
 
-
+# Back to main
 if __name__ == "__main__":
     _demo()

@@ -1,0 +1,32 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python Debugger: Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "python": "${command:python.interpreterPath}",
+            "console": "integratedTerminal",
+            "args" : [
+                "exp_name=gen_data",
+                "task=gen_data",
+                "dataf=/home/ubuntu/WY/ManiFabric/FabricMani/data/data_general",
+                "log_dir=/home/ubuntu/WY/ManiFabric/FabricMani/data/data_general",
+                "gen_gif=1",
+                "n_rollout=10",
+                "cached_states_path=adfm_general.pkl",
+                "num_variations=10",
+                "vary_cloth_size=true",
+                "vary_stiffness=true",
+                "vary_orientation=true",
+                "vary_mass=true",
+                "env_shape=random"
+
+            ]
+        }
+    ]
+}

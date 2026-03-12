@@ -7,8 +7,6 @@ from chester import logger
 from FabricMani.utils.utils import set_resource, configure_logger, configure_seed
 from FabricMani.task.task_loader import task_loader
 
-## OmegaConf & Hydra Config
-
 # Resolvers used in hydra configs (see https://omegaconf.readthedocs.io/en/2.1_branch/usage.html#resolvers)
 OmegaConf.register_new_resolver('eq', lambda x, y: x.lower()==y.lower())
 OmegaConf.register_new_resolver('contains', lambda x, y: x.lower() in y.lower())

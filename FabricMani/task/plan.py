@@ -145,11 +145,11 @@ def plan(args):
 
         # plot_figure(pred_positions, pred_shapes, returns, results,
         #         env, render_env, config_id, matrix_world_to_camera, log_dir_episode, episode_idx, args,
-        #         planner, pyflex, downsample_idx, log_dir, gt_positions, gt_shape_positions, frames, frames_top)
+#                 planner, pyflex, downsample_idx, log_dir, gt_positions, gt_shape_positions, frames, frames_top)
 
         # plot init result
-        # draw_init_trajectory(res_init['pred_positions'], res_init['pred_shapes'], render_env, config_id,
-        #                matrix_world_to_camera, log_dir_episode, episode_idx, env)
+#         draw_init_trajectory(res_init['pred_positions'], res_init['pred_shapes'], render_env, config_id,
+#                        matrix_world_to_camera, log_dir_episode, episode_idx, env)
         time_cost = len(infos) * args.dt * args.pred_time_interval
         transformed_info = transform_info([infos])
         plot_performance_curve(transformed_info, log_dir_episode, episode_idx, pred_performances, gt_shape_positions)
@@ -161,8 +161,8 @@ def plan(args):
         make_result_gif(frames, env, matrix_world_to_camera, episode_idx, logger, args, frames_top)
 
         # # draw the groundtruth trajectory
-        # draw_gt_trajectory(gt_positions, gt_shape_positions, render_env, config_id, downsample_idx,
-        #                matrix_world_to_camera, log_dir_episode, episode_idx, env)
+#         draw_gt_trajectory(gt_positions, gt_shape_positions, render_env, config_id, downsample_idx,
+#                        matrix_world_to_camera, log_dir_episode, episode_idx, env)
 
         print('episode {} finished'.format(episode_idx))
 
